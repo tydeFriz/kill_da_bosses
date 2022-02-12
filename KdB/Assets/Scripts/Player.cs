@@ -1,17 +1,28 @@
 using Unity.Netcode;
 using UnityEngine;
+using System;
 
 namespace Friz
 {
+
     public class Player : NetworkBehaviour
     {
-         [SerializeField]
+        [SerializeField]
         private float movementSpeed = 4.0f;
 
         [SerializeField]
         private NetworkVariable<Vector2> movementDirection = new NetworkVariable<Vector2>();
 
         private Vector2 oldMovementDirection;
+
+
+        private void Start()
+        {
+            if( IsOwner ){
+                CameraController cameraController = Camera.main.GetComponent(typeof(CameraController)) as CameraController;
+                cameraController.AttachToPlayer(gameObject);
+            }
+        }
 
         private void Update()
         {
@@ -31,7 +42,9 @@ namespace Friz
                                 + Vector2.ClampMagnitude(movementDirection.Value, 1.0f) * Time.deltaTime * movementSpeed;
             transform.position = new Vector3(newPosition.x, newPosition.y, transform.position.z);
             transform.localScale = new Vector3(
-                movementDirection.Value.x > 0 ? 1 : -1,
+                movementDirection.Value.x != 0
+                ? Math.Sign(movementDirection.Value.x)
+                : transform.localScale.x,
                 transform.localScale.y,
                 transform.localScale.z
             );

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Friz
 {
+    
     public class ConnectionUIManager : MonoBehaviour
     {
         void OnGUI()
