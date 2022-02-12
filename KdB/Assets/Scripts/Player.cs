@@ -1,70 +1,63 @@
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
+using Unity.Netcode;
 using UnityEngine;
 
-namespace GameNetwork
+namespace Friz
 {
     public class Player : NetworkBehaviour
     {
-        public NetworkVariable<int> LastUsedId = new NetworkVariable<int>(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.Everyone,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
-        public NetworkVariable<int> Id = new NetworkVariable<int>(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.ServerOnly,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
+         [SerializeField]
+        private float movementSpeed = 4.0f;
 
-        public NetworkVariableVector2 Position = new NetworkVariableVector2(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.ServerOnly,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
+        [SerializeField]
+        private NetworkVariable<Vector2> movementDirection = new NetworkVariable<Vector2>();
 
-        public NetworkVariable<float> MovementSpeed = new NetworkVariable<float>(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.ServerOnly,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
+        private Vector2 oldMovementDirection;
 
-        private BoxCollider2D boxCollider;
-
-        public override void NetworkStart()
+        private void Update()
         {
-            InitPlayer();
-            boxCollider = GetComponent<BoxCollider2D>();
+            if( IsServer )
+            {
+                UpdateServer();
+            }
+            if( IsClient && IsOwner )
+            {
+                updateClient();
+            }
         }
 
-        public void InitPlayer()
+        private void UpdateServer()
         {
-            LastUsedId.Value = LastUsedId.Value + 1;
-            if (NetworkManager.Singleton.IsServer)
-            {
-                Id.Value = LastUsedId.Value;
-                MovementSpeed.Value = 3.0f;
-            }
-            else
-            {
-                SubmitInitRequestServerRpc();
-            }
-            
+            Vector2 newPosition = new Vector2(transform.position.x, transform.position.y)
+                                + Vector2.ClampMagnitude(movementDirection.Value, 1.0f) * Time.deltaTime * movementSpeed;
+            transform.position = new Vector3(newPosition.x, newPosition.y, transform.position.z);
+            transform.localScale = new Vector3(
+                movementDirection.Value.x > 0 ? 1 : -1,
+                transform.localScale.y,
+                transform.localScale.z
+            );
         }
 
-        public void Move()
+        private void updateClient()
         {
-            //todo
+            Vector2 newMovementDirection = new Vector2(
+                Input.GetAxisRaw("Horizontal"),
+                Input.GetAxisRaw("Vertical")
+            );
+
+            if( oldMovementDirection == newMovementDirection ){
+                return;
+            }
+            oldMovementDirection = newMovementDirection;
+
+            UpdateClientDirectionServerRpc(newMovementDirection);
         }
 
         [ServerRpc]
-        void SubmitInitRequestServerRpc(ServerRpcParams rpcParams = default)
+        public void UpdateClientDirectionServerRpc(Vector2 newMovementDirection)
         {
-            Id.Value = LastUsedId.Value;
-            MovementSpeed.Value = 3.0f;
+            movementDirection.Value = newMovementDirection;
         }
-    
+
     }
 
 }
