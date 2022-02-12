@@ -8,7 +8,7 @@ namespace Friz
     public class Player : NetworkBehaviour
     {
         [SerializeField]
-        private float movementSpeed = 4.0f;
+        public float movementSpeed = 4.0f;
 
         [SerializeField]
         private NetworkVariable<Vector2> movementDirection = new NetworkVariable<Vector2>();
