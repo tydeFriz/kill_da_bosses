@@ -13,18 +13,23 @@ namespace Friz
         [SerializeField]
         private NetworkVariable<Vector2> movementDirection = new NetworkVariable<Vector2>();
 
+        [SerializeField]
+        private Rigidbody2D rigidBody;
+
         private Vector2 oldMovementDirection;
 
 
         private void Start()
         {
+            rigidBody = GetComponent<Rigidbody2D>();
+
             if( IsOwner ){
                 CameraController cameraController = Camera.main.GetComponent(typeof(CameraController)) as CameraController;
                 cameraController.AttachToPlayer(gameObject);
             }
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             if( IsServer )
             {
@@ -39,8 +44,8 @@ namespace Friz
         private void UpdateServer()
         {
             Vector2 newPosition = new Vector2(transform.position.x, transform.position.y)
-                                + Vector2.ClampMagnitude(movementDirection.Value, 1.0f) * Time.deltaTime * movementSpeed;
-            transform.position = new Vector3(newPosition.x, newPosition.y, transform.position.z);
+                                + Vector2.ClampMagnitude(movementDirection.Value, 1.0f) * Time.fixedDeltaTime * movementSpeed;
+            rigidBody.MovePosition(new Vector3(newPosition.x, newPosition.y, transform.position.z));
             transform.localScale = new Vector3(
                 movementDirection.Value.x != 0
                 ? Math.Sign(movementDirection.Value.x)
