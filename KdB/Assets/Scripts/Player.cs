@@ -18,7 +18,6 @@ namespace Friz
 
         private Vector2 oldMovementDirection;
 
-
         private void Start()
         {
             rigidBody = GetComponent<Rigidbody2D>();
